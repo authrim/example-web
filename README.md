@@ -102,16 +102,15 @@ example-web/
 - Shows session information
 - Logout functionality
 
-## Authrim Dashboard Configuration
+## Authrim Configuration
 
-1. Log in to [Authrim Dashboard](https://dashboard.authrim.com)
-2. Create or select an application
-3. In "Client Settings", check/configure:
-   - **Client ID**: Set in `config.js` as `clientId`
-   - **Allowed Redirect URIs**: Add your deployment URL
-     - e.g., `https://your-app.pages.dev/callback.html`
-   - **Allowed Origins**: Add your deployment origin
-     - e.g., `https://your-app.pages.dev`
+In your Authrim Admin panel, configure the following:
+
+- **Client ID**: Set in `config.js` as `clientId`
+- **Allowed Redirect URIs**: Add your deployment URL
+  - e.g., `https://your-app.pages.dev/callback.html`
+- **Allowed Origins**: Add your deployment origin
+  - e.g., `https://your-app.pages.dev`
 
 ## Technical Specifications
 
@@ -133,13 +132,13 @@ Edit `config.js` and set your actual Authrim tenant URL and client ID.
 
 ### Social login not working
 
-- Verify social providers are enabled in Authrim dashboard
+- Verify social providers are enabled in your Authrim configuration
 - Check that redirect URIs are correctly configured
 
 ### Callback errors
 
-- Ensure `callback.html` URL is included in the allowed redirect URIs in Authrim dashboard
+- Ensure `callback.html` URL is included in the allowed redirect URIs
 
 ## License
 
-MIT
+Apache 2.0
