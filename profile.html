@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile | Authrim Example</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Profile</h1>
+      <p>User Information</p>
+    </header>
+
+    <!-- Loading State -->
+    <div id="loading" class="card">
+      <div class="status status-loading">
+        <span class="spinner"></span> Loading...
+      </div>
+    </div>
+
+    <!-- Profile Content -->
+    <div id="profile" class="card hidden">
+      <div class="user-info">
+        <div class="user-avatar" id="user-avatar">?</div>
+        <div class="user-details">
+          <h3 id="user-name">-</h3>
+          <p id="user-email">-</p>
+        </div>
+      </div>
+
+      <dl class="profile-details">
+        <dt>User ID</dt>
+        <dd id="user-id">-</dd>
+
+        <dt>Email Address</dt>
+        <dd id="user-email-detail">-</dd>
+
+        <dt>Display Name</dt>
+        <dd id="user-display-name">-</dd>
+
+        <dt>Email Verified</dt>
+        <dd id="user-email-verified">-</dd>
+
+        <dt>Created At</dt>
+        <dd id="user-created-at">-</dd>
+      </dl>
+    </div>
+
+    <!-- Session Info -->
+    <div id="session-info" class="card hidden">
+      <h2>Session Information</h2>
+      <dl class="profile-details">
+        <dt>Session ID</dt>
+        <dd id="session-id">-</dd>
+
+        <dt>Expires At</dt>
+        <dd id="session-expires">-</dd>
+      </dl>
+    </div>
+
+    <!-- Actions -->
+    <div id="actions" class="hidden">
+      <a href="index.html" class="btn btn-primary">Back to Home</a>
+      <button id="logout-btn" class="btn btn-danger" style="margin-top: 0.5rem;">
+        <span class="btn-text">Sign Out</span>
+        <span class="btn-spinner hidden"><span class="spinner"></span></span>
+      </button>
+    </div>
+
+    <!-- Error State -->
+    <div id="error" class="card hidden">
+      <div class="status status-error" id="error-message"></div>
+      <a href="login.html" class="btn btn-primary">Sign In</a>
+    </div>
+
+    <footer>
+      <p>Powered by <a href="https://authrim.com" target="_blank">Authrim</a></p>
+    </footer>
+  </div>
+
+  <!-- Load SDK -->
+  <script src="https://unpkg.com/@authrim/web@latest/dist/authrim-web.umd.js"></script>
+  <script src="config.js"></script>
+  <script>
+    // Elements
+    var $loading = document.getElementById('loading');
+    var $profile = document.getElementById('profile');
+    var $sessionInfo = document.getElementById('session-info');
+    var $actions = document.getElementById('actions');
+    var $error = document.getElementById('error');
+    var $errorMessage = document.getElementById('error-message');
+    var $logoutBtn = document.getElementById('logout-btn');
+
+    var $userAvatar = document.getElementById('user-avatar');
+    var $userName = document.getElementById('user-name');
+    var $userEmail = document.getElementById('user-email');
+    var $userId = document.getElementById('user-id');
+    var $userEmailDetail = document.getElementById('user-email-detail');
+    var $userDisplayName = document.getElementById('user-display-name');
+    var $userEmailVerified = document.getElementById('user-email-verified');
+    var $userCreatedAt = document.getElementById('user-created-at');
+    var $sessionId = document.getElementById('session-id');
+    var $sessionExpires = document.getElementById('session-expires');
+
+    // Show state
+    function showState(state) {
+      $loading.classList.add('hidden');
+      $profile.classList.add('hidden');
+      $sessionInfo.classList.add('hidden');
+      $actions.classList.add('hidden');
+      $error.classList.add('hidden');
+
+      switch (state) {
+        case 'loading':
+          $loading.classList.remove('hidden');
+          break;
+        case 'profile':
+          $profile.classList.remove('hidden');
+          $sessionInfo.classList.remove('hidden');
+          $actions.classList.remove('hidden');
+          break;
+        case 'error':
+          $error.classList.remove('hidden');
+          break;
+      }
+    }
+
+    // Show error
+    function showError(message) {
+      $errorMessage.textContent = message;
+      showState('error');
+    }
+
+    // Format date
+    function formatDate(dateStr) {
+      if (!dateStr) return '-';
+      try {
+        var date = new Date(dateStr);
+        return date.toLocaleString();
+      } catch (e) {
+        return dateStr;
+      }
+    }
+
+    // Button loading state
+    function setButtonLoading(btn, loading) {
+      var $text = btn.querySelector('.btn-text');
+      var $spinner = btn.querySelector('.btn-spinner');
+      if (loading) {
+        btn.disabled = true;
+        if ($text) $text.classList.add('hidden');
+        if ($spinner) $spinner.classList.remove('hidden');
+      } else {
+        btn.disabled = false;
+        if ($text) $text.classList.remove('hidden');
+        if ($spinner) $spinner.classList.add('hidden');
+      }
+    }
+
+    // Show profile
+    function showProfile(user, session) {
+      // User info
+      $userAvatar.textContent = (user.name || user.email || '?').charAt(0).toUpperCase();
+      $userName.textContent = user.name || 'User';
+      $userEmail.textContent = user.email || '-';
+      $userId.textContent = user.id || user.sub || '-';
+      $userEmailDetail.textContent = user.email || '-';
+      $userDisplayName.textContent = user.name || user.nickname || '-';
+      $userEmailVerified.textContent = user.email_verified ? 'Yes' : 'No';
+      $userCreatedAt.textContent = formatDate(user.created_at);
+
+      // Session info
+      if (session) {
+        $sessionId.textContent = session.id || '-';
+        $sessionExpires.textContent = formatDate(session.expiresAt);
+      }
+
+      showState('profile');
+    }
+
+    // Main
+    async function main() {
+      try {
+        // Check configuration
+        if (!window.AUTHRIM_CONFIG?.issuer || window.AUTHRIM_CONFIG.issuer === 'https://your-tenant.authrim.com') {
+          showError('Please configure issuer and clientId in config.js');
+          return;
+        }
+
+        // Initialize SDK
+        var auth = await AuthrimWeb.createAuthrim({
+          issuer: window.AUTHRIM_CONFIG.issuer,
+          clientId: window.AUTHRIM_CONFIG.clientId,
+        });
+
+        // Get session
+        var result = await auth.session.get();
+
+        if (result.error || !result.data || !result.data.user) {
+          // Not logged in
+          showError('Authentication required.');
+          return;
+        }
+
+        // Show profile
+        showProfile(result.data.user, result.data.session);
+
+        // Logout button
+        $logoutBtn.addEventListener('click', async function() {
+          setButtonLoading($logoutBtn, true);
+
+          try {
+            await auth.signOut();
+            window.location.href = 'index.html';
+          } catch (e) {
+            console.error('Logout error:', e);
+            alert('Failed to sign out: ' + e.message);
+            setButtonLoading($logoutBtn, false);
+          }
+        });
+
+      } catch (e) {
+        console.error('Initialization error:', e);
+        showError('Initialization failed: ' + e.message);
+      }
+    }
+
+    main();
+  </script>
+</body>
+</html>

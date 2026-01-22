@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Processing | Authrim Example</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Processing Authentication</h1>
+    </header>
+
+    <!-- Loading State -->
+    <div id="loading" class="card">
+      <div class="status status-loading">
+        <span class="spinner"></span> Processing authentication...
+      </div>
+    </div>
+
+    <!-- Success State -->
+    <div id="success" class="card hidden">
+      <div class="status status-success">
+        Authentication complete. Redirecting...
+      </div>
+    </div>
+
+    <!-- Error State -->
+    <div id="error" class="card hidden">
+      <div class="status status-error" id="error-message"></div>
+      <a href="login.html" class="btn btn-primary">Back to Login</a>
+      <a href="index.html" class="btn btn-secondary" style="margin-top: 0.5rem;">Back to Home</a>
+    </div>
+
+    <footer>
+      <p>Powered by <a href="https://authrim.com" target="_blank">Authrim</a></p>
+    </footer>
+  </div>
+
+  <!-- Load SDK -->
+  <script src="https://unpkg.com/@authrim/web@latest/dist/authrim-web.umd.js"></script>
+  <script src="config.js"></script>
+  <script>
+    // Elements
+    var $loading = document.getElementById('loading');
+    var $success = document.getElementById('success');
+    var $error = document.getElementById('error');
+    var $errorMessage = document.getElementById('error-message');
+
+    // Show state
+    function showState(state) {
+      $loading.classList.add('hidden');
+      $success.classList.add('hidden');
+      $error.classList.add('hidden');
+
+      switch (state) {
+        case 'loading':
+          $loading.classList.remove('hidden');
+          break;
+        case 'success':
+          $success.classList.remove('hidden');
+          break;
+        case 'error':
+          $error.classList.remove('hidden');
+          break;
+      }
+    }
+
+    // Show error
+    function showError(message) {
+      $errorMessage.textContent = message;
+      showState('error');
+    }
+
+    // Main
+    async function main() {
+      try {
+        // Check configuration
+        if (!window.AUTHRIM_CONFIG?.issuer || window.AUTHRIM_CONFIG.issuer === 'https://your-tenant.authrim.com') {
+          showError('Please configure issuer and clientId in config.js');
+          return;
+        }
+
+        // Initialize SDK
+        var auth = await AuthrimWeb.createAuthrim({
+          issuer: window.AUTHRIM_CONFIG.issuer,
+          clientId: window.AUTHRIM_CONFIG.clientId,
+        });
+
+        // Check for callback parameters
+        if (!auth.social.hasCallbackParams()) {
+          // No callback parameters, redirect to home
+          window.location.href = 'index.html';
+          return;
+        }
+
+        // Handle callback
+        var result = await auth.social.handleCallback();
+
+        if (result.error) {
+          showError(result.error.message);
+          return;
+        }
+
+        // Success
+        showState('success');
+        setTimeout(function() {
+          window.location.href = 'index.html';
+        }, 1000);
+
+      } catch (e) {
+        console.error('Callback error:', e);
+        showError('Authentication processing failed: ' + e.message);
+      }
+    }
+
+    main();
+  </script>
+</body>
+</html>

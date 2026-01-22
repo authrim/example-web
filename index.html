@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home | Authrim Example</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Authrim Example</h1>
+      <p>@authrim/web SDK Demo</p>
+    </header>
+
+    <!-- Loading State -->
+    <div id="loading" class="card">
+      <div class="status status-loading">
+        <span class="spinner"></span> Checking authentication status...
+      </div>
+    </div>
+
+    <!-- Logged Out State -->
+    <div id="logged-out" class="card hidden">
+      <h2>Welcome</h2>
+      <p style="color: var(--gray-500); margin-bottom: 1rem;">
+        This sample demonstrates authentication features using the Authrim SDK.
+      </p>
+      <a href="login.html" class="btn btn-primary">Sign In</a>
+    </div>
+
+    <!-- Logged In State -->
+    <div id="logged-in" class="card hidden">
+      <h2>Signed In</h2>
+      <div class="user-info">
+        <div class="user-avatar" id="user-avatar">?</div>
+        <div class="user-details">
+          <h3 id="user-name">-</h3>
+          <p id="user-email">-</p>
+        </div>
+      </div>
+      <a href="profile.html" class="btn btn-primary">View Profile</a>
+      <button id="logout-btn" class="btn btn-secondary">
+        <span class="btn-text">Sign Out</span>
+        <span class="btn-spinner hidden"><span class="spinner"></span></span>
+      </button>
+    </div>
+
+    <!-- Error State -->
+    <div id="error" class="card hidden">
+      <div class="status status-error" id="error-message"></div>
+      <button onclick="location.reload()" class="btn btn-secondary">Retry</button>
+    </div>
+
+    <footer>
+      <p>Powered by <a href="https://authrim.com" target="_blank">Authrim</a></p>
+    </footer>
+  </div>
+
+  <!-- Load SDK -->
+  <script src="https://unpkg.com/@authrim/web@latest/dist/authrim-web.umd.js"></script>
+  <script src="config.js"></script>
+  <script>
+    // State elements
+    const $loading = document.getElementById('loading');
+    const $loggedOut = document.getElementById('logged-out');
+    const $loggedIn = document.getElementById('logged-in');
+    const $error = document.getElementById('error');
+    const $errorMessage = document.getElementById('error-message');
+    const $userName = document.getElementById('user-name');
+    const $userEmail = document.getElementById('user-email');
+    const $userAvatar = document.getElementById('user-avatar');
+    const $logoutBtn = document.getElementById('logout-btn');
+
+    // Switch state
+    function showState(state) {
+      $loading.classList.add('hidden');
+      $loggedOut.classList.add('hidden');
+      $loggedIn.classList.add('hidden');
+      $error.classList.add('hidden');
+
+      switch (state) {
+        case 'loading':
+          $loading.classList.remove('hidden');
+          break;
+        case 'logged-out':
+          $loggedOut.classList.remove('hidden');
+          break;
+        case 'logged-in':
+          $loggedIn.classList.remove('hidden');
+          break;
+        case 'error':
+          $error.classList.remove('hidden');
+          break;
+      }
+    }
+
+    // Show user info
+    function showUser(user) {
+      $userName.textContent = user.name || 'User';
+      $userEmail.textContent = user.email || '-';
+      $userAvatar.textContent = (user.name || user.email || '?').charAt(0).toUpperCase();
+      showState('logged-in');
+    }
+
+    // Show error
+    function showError(message) {
+      $errorMessage.textContent = message;
+      showState('error');
+    }
+
+    // Button loading state
+    function setButtonLoading(btn, loading) {
+      const $text = btn.querySelector('.btn-text');
+      const $spinner = btn.querySelector('.btn-spinner');
+      if (loading) {
+        btn.disabled = true;
+        if ($text) $text.classList.add('hidden');
+        if ($spinner) $spinner.classList.remove('hidden');
+      } else {
+        btn.disabled = false;
+        if ($text) $text.classList.remove('hidden');
+        if ($spinner) $spinner.classList.add('hidden');
+      }
+    }
+
+    // Main
+    async function main() {
+      try {
+        // Check configuration
+        if (!window.AUTHRIM_CONFIG?.issuer || window.AUTHRIM_CONFIG.issuer === 'https://your-tenant.authrim.com') {
+          showError('Please configure issuer and clientId in config.js');
+          return;
+        }
+
+        // Initialize SDK
+        const auth = await AuthrimWeb.createAuthrim({
+          issuer: window.AUTHRIM_CONFIG.issuer,
+          clientId: window.AUTHRIM_CONFIG.clientId,
+        });
+
+        // Check session
+        const { data, error } = await auth.session.get();
+
+        if (error) {
+          console.error('Session error:', error);
+          showState('logged-out');
+          return;
+        }
+
+        if (data && data.user) {
+          showUser(data.user);
+        } else {
+          showState('logged-out');
+        }
+
+        // Logout button
+        $logoutBtn.addEventListener('click', async () => {
+          setButtonLoading($logoutBtn, true);
+
+          try {
+            await auth.signOut();
+            showState('logged-out');
+          } catch (e) {
+            console.error('Logout error:', e);
+            showError('Failed to sign out.');
+          } finally {
+            setButtonLoading($logoutBtn, false);
+          }
+        });
+
+      } catch (e) {
+        console.error('Initialization error:', e);
+        showError('Initialization failed: ' + e.message);
+      }
+    }
+
+    main();
+  </script>
+</body>
+</html>
