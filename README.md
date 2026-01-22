@@ -39,12 +39,12 @@ Navigate to `http://localhost:3000` (or your Live Server URL).
 
 ### Method 1: Git Integration
 
-1. Fork or clone this repository
+1. Fork this repository to your GitHub account
 2. Edit `config.js` with your issuer and clientId
 3. Commit and push changes
 4. Log in to [Cloudflare Pages](https://pages.cloudflare.com/)
 5. Click "Create a project" → "Connect to Git"
-6. Select your repository
+6. Select your forked repository
 7. Build settings:
    - **Framework preset**: None
    - **Build command**: (leave empty)
