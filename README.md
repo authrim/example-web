@@ -115,7 +115,7 @@ In your Authrim Admin panel, configure the following:
 ## Technical Specifications
 
 - **SDK**: [@authrim/web](https://www.npmjs.com/package/@authrim/web)
-- **CDN**: unpkg (`https://unpkg.com/@authrim/web@latest/dist/authrim-web.umd.js`)
+- **CDN**: unpkg (`https://unpkg.com/@authrim/web@latest/dist/authrim-web.umd.global.js`)
 - **Supported Browsers**: Chrome, Firefox, Safari, Edge (latest versions)
 - **No Framework Required**: Vanilla JavaScript only
 
