@@ -229,6 +229,25 @@
           enableOAuth: true,
         });
 
+        // Initialize diagnostic logger if enabled
+        const diagConfig = window.AUTHRIM_CONFIG?.diagnostic;
+        if (diagConfig?.enabled && AuthrimWeb.createDiagnosticLogger) {
+          const diagnosticLogger = AuthrimWeb.createDiagnosticLogger({
+            enabled: true,
+            collectLogs: diagConfig.collectLogs !== false,
+            persistToStorage: diagConfig.persistToStorage !== false,
+            maxLogs: diagConfig.maxLogs ?? 1000,
+            sendToServer: diagConfig.sendToServer ?? false,
+            serverUrl: diagConfig.serverUrl ?? window.AUTHRIM_CONFIG.issuer,
+            clientId: window.AUTHRIM_CONFIG.clientId,
+          });
+
+          if (diagnosticLogger) {
+            auth.setDiagnosticLogger?.(diagnosticLogger);
+            window.AUTHRIM_DIAGNOSTIC_LOGGER = diagnosticLogger;
+          }
+        }
+
         // Check for SSO error in URL (returned from callback after login_required)
         const urlParams = new URLSearchParams(window.location.search);
         const ssoError = urlParams.get('sso_error');

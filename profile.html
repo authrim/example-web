@@ -195,6 +195,25 @@
           clientId: window.AUTHRIM_CONFIG.clientId,
         });
 
+        // Initialize diagnostic logger if enabled
+        var diagConfig = window.AUTHRIM_CONFIG?.diagnostic;
+        if (diagConfig?.enabled && AuthrimWeb.createDiagnosticLogger) {
+          var diagnosticLogger = AuthrimWeb.createDiagnosticLogger({
+            enabled: true,
+            collectLogs: diagConfig.collectLogs !== false,
+            persistToStorage: diagConfig.persistToStorage !== false,
+            maxLogs: diagConfig.maxLogs ?? 1000,
+            sendToServer: diagConfig.sendToServer ?? false,
+            serverUrl: diagConfig.serverUrl ?? window.AUTHRIM_CONFIG.issuer,
+            clientId: window.AUTHRIM_CONFIG.clientId,
+          });
+
+          if (diagnosticLogger) {
+            auth.setDiagnosticLogger?.(diagnosticLogger);
+            window.AUTHRIM_DIAGNOSTIC_LOGGER = diagnosticLogger;
+          }
+        }
+
         // Get session
         var result = await auth.session.get();
 

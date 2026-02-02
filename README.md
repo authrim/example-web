@@ -11,9 +11,15 @@ A Vanilla JavaScript sample application using the `@authrim/web` SDK. Loads the 
 
 ## Quick Start
 
-### 1. Edit Configuration
+### 1. Setup Configuration
 
-Open `config.js` and set the values from your Authrim dashboard.
+Copy `config.example.js` to `config.js` and set the values from your Authrim dashboard.
+
+```bash
+cp config.example.js config.js
+```
+
+Then edit `config.js`:
 
 ```javascript
 window.AUTHRIM_CONFIG = {
@@ -66,7 +72,8 @@ Navigate to `http://localhost:3000` (or your Live Server URL).
 ```
 example-web/
 ├── README.md          # This file
-├── config.js          # ★ Configuration file (must edit)
+├── config.example.js  # Configuration template
+├── config.js          # ★ Configuration file (must create from example)
 ├── index.html         # Home page
 ├── login.html         # Login page
 ├── callback.html      # OAuth callback handler
@@ -119,11 +126,66 @@ In your Authrim Admin panel, configure the following:
 - **Supported Browsers**: Chrome, Firefox, Safari, Edge (latest versions)
 - **No Framework Required**: Vanilla JavaScript only
 
+## Diagnostic Logging (Optional)
+
+To enable diagnostic logging for debugging or OIDF conformance testing:
+
+### 1. Enable in Configuration
+
+Edit `config.js` and set diagnostic options:
+
+```javascript
+window.AUTHRIM_CONFIG = {
+  issuer: 'https://your-tenant.authrim.com',
+  clientId: 'your-client-id',
+
+  diagnostic: {
+    enabled: true,
+    collectLogs: true,
+    sendToServer: false,  // Set to true to send logs to server
+  }
+};
+```
+
+### 2. View Logs in Console
+
+Open browser console and run:
+
+```javascript
+window.AUTHRIM_DIAGNOSTIC_LOGGER?.getLogs()
+```
+
+### 3. Download Logs
+
+To download logs as JSON file:
+
+```javascript
+window.AUTHRIM_DIAGNOSTIC_LOGGER?.downloadLogs()
+```
+
+### 4. Send Logs to Server (Optional)
+
+To automatically send logs to the server for analysis:
+
+```javascript
+window.AUTHRIM_CONFIG = {
+  // ... other config
+  diagnostic: {
+    enabled: true,
+    collectLogs: true,
+    sendToServer: true,
+    serverUrl: 'https://your-tenant.authrim.com',
+  }
+};
+```
+
+**Note**: example-web is a public client and does not require `clientSecret`.
+
 ## Troubleshooting
 
 ### "Please configure issuer and clientId in config.js" message appears
 
-Edit `config.js` and set your actual Authrim tenant URL and client ID.
+Edit `config.js` and set your actual Authrim tenant URL and client ID
 
 ### Passkey not working
 
