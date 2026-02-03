@@ -73,9 +73,45 @@
       showState('error');
     }
 
+    function handlePopupCallbacks() {
+      // OAuth popup callback (uses window.name)
+      if (
+        window.AuthrimWeb &&
+        typeof window.name === 'string' &&
+        window.name.indexOf('authrim:popup:') === 0 &&
+        typeof AuthrimWeb.handlePopupCallback === 'function'
+      ) {
+        AuthrimWeb.handlePopupCallback();
+        return true;
+      }
+
+      // Direct Auth social popup callback
+      if (window.opener && window.opener.postMessage) {
+        var params = new URLSearchParams(window.location.search);
+        window.opener.postMessage(
+          {
+            type: 'authrim:social:callback',
+            code: params.get('code') || undefined,
+            state: params.get('state') || undefined,
+            error: params.get('error') || undefined,
+            error_description: params.get('error_description') || undefined,
+          },
+          window.location.origin
+        );
+        window.close();
+        return true;
+      }
+
+      return false;
+    }
+
     // Main
     async function main() {
       try {
+        if (handlePopupCallbacks()) {
+          return;
+        }
+
         // Check configuration
         if (!window.AUTHRIM_CONFIG?.issuer || window.AUTHRIM_CONFIG.issuer === 'https://your-tenant.authrim.com') {
           showError('Please configure issuer and clientId in config.js');
@@ -118,6 +154,23 @@
           if (silentResult.status === 'error') {
             showError('SSO Error: ' + silentResult.error + (silentResult.errorDescription ? ' - ' + silentResult.errorDescription : ''));
           }
+          return;
+        }
+
+        var oauthFlow = sessionStorage.getItem('oauth_flow') === '1';
+
+        if (oauthFlow) {
+          sessionStorage.removeItem('oauth_flow');
+          var oauthResult = await auth.oauth.handleCallback(window.location.href);
+          if (oauthResult.error) {
+            showError(oauthResult.error.message);
+            return;
+          }
+
+          showState('success');
+          setTimeout(function() {
+            window.location.href = 'index.html';
+          }, 1000);
           return;
         }
 

@@ -27,6 +27,10 @@
         This sample demonstrates authentication features using the Authrim SDK.
       </p>
       <a href="login.html" class="btn btn-primary">Sign In</a>
+      <button id="oauth-signin-btn" class="btn btn-secondary" style="margin-top: 0.5rem;">
+        <span class="btn-text">Sign in with OAuth</span>
+        <span class="btn-spinner hidden"><span class="spinner"></span></span>
+      </button>
     </div>
 
     <!-- Logged In State -->
@@ -129,6 +133,7 @@
     const $sessionId = document.getElementById('session-id');
     const $sessionExpires = document.getElementById('session-expires');
     const $logoutBtn = document.getElementById('logout-btn');
+    const $oauthSigninBtn = document.getElementById('oauth-signin-btn');
 
     // Switch state
     function showState(state) {
@@ -294,6 +299,28 @@
           // SSO already attempted or disabled - show login button
           showState('logged-out');
         }
+
+        // OAuth sign-in button
+        $oauthSigninBtn.addEventListener('click', async () => {
+          setButtonLoading($oauthSigninBtn, true);
+
+          try {
+            sessionStorage.setItem('oauth_flow', '1');
+            const result = await auth.oauth.popup.login({
+              redirectUri: window.location.origin + '/callback.html',
+              fallbackToRedirect: true,
+              fallbackRedirectUri: window.location.origin + '/callback.html',
+            });
+            console.log('OAuth login result:', result);
+            alert('OAuth login completed. See console for tokens.');
+          } catch (e) {
+            console.error('OAuth login error:', e);
+            showError('OAuth login failed: ' + e.message);
+          } finally {
+            sessionStorage.removeItem('oauth_flow');
+            setButtonLoading($oauthSigninBtn, false);
+          }
+        });
 
         // Logout button
         $logoutBtn.addEventListener('click', async () => {

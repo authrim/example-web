@@ -285,7 +285,9 @@
         setButtonLoading(btn, true);
 
         try {
-          var result = await auth.social.loginWithPopup(provider);
+          var result = await auth.social.loginWithPopup(provider, {
+            redirectUri: window.location.origin + '/callback.html',
+          });
           if (result.error) {
             showStatus(result.error.message, 'error');
           } else {
