@@ -295,18 +295,13 @@
         setButtonLoading(btn, true);
 
         try {
-          var result = await auth.social.loginWithPopup(provider, {
+          await auth.social.loginWithRedirect(provider, {
             redirectUri: window.location.origin + '/callback.html',
             scopes: getScopes(),
           });
-          if (result.error) {
-            showStatus(result.error.message, 'error');
-          } else {
-            onLoginSuccess();
-          }
+          // Note: loginWithRedirect does not return - browser redirects away
         } catch (e) {
           showStatus(provider + ' login failed: ' + e.message, 'error');
-        } finally {
           setButtonLoading(btn, false);
         }
       }
