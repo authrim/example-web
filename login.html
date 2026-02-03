@@ -282,12 +282,12 @@
 
       function getScopes() {
         var scopes = window.AUTHRIM_CONFIG?.scopes;
-        if (!scopes) return undefined;
+        if (!scopes) return ['openid', 'profile', 'email'];
         if (Array.isArray(scopes)) return scopes;
         if (typeof scopes === 'string') {
           return scopes.split(/\s+/).filter(Boolean);
         }
-        return undefined;
+        return ['openid', 'profile', 'email'];
       }
 
       async function socialLogin(provider, btn) {
