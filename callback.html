@@ -91,7 +91,7 @@
         window.opener.postMessage(
           {
             type: 'authrim:social:callback',
-            external_auth: params.get('external_auth') || undefined,
+            code: params.get('code') || undefined,
             error: params.get('error') || undefined,
             error_description: params.get('error_description') || undefined,
           },
