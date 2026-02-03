@@ -203,6 +203,16 @@
       showState('error');
     }
 
+    function getScopes() {
+      var scopes = window.AUTHRIM_CONFIG?.scopes;
+      if (!scopes) return undefined;
+      if (Array.isArray(scopes)) return scopes;
+      if (typeof scopes === 'string') {
+        return scopes.split(/\s+/).filter(Boolean);
+      }
+      return undefined;
+    }
+
     // Button loading state
     function setButtonLoading(btn, loading) {
       const $text = btn.querySelector('.btn-text');
@@ -310,6 +320,7 @@
               redirectUri: window.location.origin + '/callback.html',
               fallbackToRedirect: true,
               fallbackRedirectUri: window.location.origin + '/callback.html',
+              scopes: getScopes(),
             });
             console.log('OAuth login result:', result);
             alert('OAuth login completed. See console for tokens.');

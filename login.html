@@ -280,6 +280,16 @@
       var $socialButtons = document.querySelector('.social-buttons');
       if (!$socialButtons) return;
 
+      function getScopes() {
+        var scopes = window.AUTHRIM_CONFIG?.scopes;
+        if (!scopes) return undefined;
+        if (Array.isArray(scopes)) return scopes;
+        if (typeof scopes === 'string') {
+          return scopes.split(/\s+/).filter(Boolean);
+        }
+        return undefined;
+      }
+
       async function socialLogin(provider, btn) {
         hideStatus();
         setButtonLoading(btn, true);
@@ -287,6 +297,7 @@
         try {
           var result = await auth.social.loginWithPopup(provider, {
             redirectUri: window.location.origin + '/callback.html',
+            scopes: getScopes(),
           });
           if (result.error) {
             showStatus(result.error.message, 'error');

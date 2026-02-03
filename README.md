@@ -25,6 +25,7 @@ Then edit `config.js`:
 window.AUTHRIM_CONFIG = {
   issuer: 'https://your-tenant.authrim.com',
   clientId: 'your-client-id',
+  // scopes: 'openid profile email',
 };
 ```
 

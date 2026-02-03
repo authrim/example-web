@@ -17,5 +17,9 @@ window.AUTHRIM_CONFIG = {
     maxLogs: 1000,               // Maximum logs to collect
     sendToServer: false,         // Send logs to server (optional)
     // serverUrl: 'https://your-tenant.authrim.com',
-  }
+  },
+
+  // OAuth scopes (optional) - string (space-separated) or array
+  // scopes: 'openid profile email',
+  // scopes: ['openid', 'profile', 'email'],
 };
