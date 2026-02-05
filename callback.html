@@ -104,6 +104,18 @@
       return false;
     }
 
+    // Generate storage key (matches js-web SDK implementation)
+    function getStorageKey(issuer, clientId) {
+      var key = issuer + ':' + clientId;
+      var hash = 0;
+      for (var i = 0; i < key.length; i++) {
+        var char = key.charCodeAt(i);
+        hash = (hash << 5) - hash + char;
+        hash = hash & hash; // Convert to 32bit integer
+      }
+      return 'authrim_session_' + Math.abs(hash).toString(36);
+    }
+
     // Handoff Token処理（Smart Handoff SSO）
     async function handleHandoffCallback() {
       var params = new URLSearchParams(window.location.search);
@@ -154,24 +166,16 @@
           tokenData: tokenData
         });
 
-        // Initialize SDK to save session properly
-        console.log('[Authrim] Initializing SDK...');
-        var auth = await AuthrimWeb.createAuthrim({
-          issuer: config.issuer,
-          clientId: config.clientId,
-          enableOAuth: true,
-        });
+        // Store access_token using SDK-compatible storage key
+        var storageKey = getStorageKey(config.issuer, config.clientId);
+        console.log('[Authrim] Storage key:', storageKey);
+        console.log('[Authrim] Saving access_token:', tokenData.access_token);
 
-        // Use SDK's login method to save session (matches ar-login-ui pattern)
-        if (tokenData.session && tokenData.user) {
-          console.log('[Authrim] Saving session via SDK...');
-          await auth.login(tokenData.session.id, {
-            userId: tokenData.user.id,
-            email: tokenData.user.email,
-            name: tokenData.user.name,
-          });
-          console.log('[Authrim] Session saved via SDK');
-        }
+        localStorage.setItem(storageKey, tokenData.access_token);
+
+        // Verify storage
+        var savedToken = localStorage.getItem(storageKey);
+        console.log('[Authrim] Saved token verification:', savedToken === tokenData.access_token ? 'OK' : 'FAILED');
 
         // sessionStorageをクリーンアップ
         sessionStorage.removeItem('authrim:authrim:direct:social:state');
