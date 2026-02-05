@@ -131,7 +131,7 @@
         var config = window.AUTHRIM_CONFIG;
 
         // ハンドオフトークンを検証
-        var response = await fetch(config.issuer + '/api/v1/auth/handoff/verify', {
+        var response = await fetch(config.issuer + '/auth/external/handoff/verify', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
