@@ -104,19 +104,17 @@
       return false;
     }
 
-    // Generate storage key (matches js-web SDK implementation)
-    function getStorageKey(issuer, clientId) {
-      var key = issuer + ':' + clientId;
-      var hash = 0;
-      for (var i = 0; i < key.length; i++) {
-        var char = key.charCodeAt(i);
-        hash = (hash << 5) - hash + char;
-        hash = hash & hash; // Convert to 32bit integer
-      }
-      return 'authrim_session_' + Math.abs(hash).toString(36);
-    }
-
-    // Handoff Token処理（Smart Handoff SSO）
+    /**
+     * Handoff Token処理（Smart Handoff SSO）
+     *
+     * SDK の auth.handoff.verifyAndSave() を使用した簡素化版
+     * 以下を自動実行:
+     * - ハンドオフトークン検証
+     * - State CSRF検証（handoff namespace）
+     * - localStorage への保存（SessionAuthImpl と同じ方法）
+     * - sessionStorage クリーンアップ
+     * - auth:login イベント発火
+     */
     async function handleHandoffCallback() {
       var params = new URLSearchParams(window.location.search);
       var handoffToken = params.get('handoff_token');
@@ -131,77 +129,52 @@
       // URLからトークンを即座に消去（Referrer漏洩対策）
       history.replaceState(null, '', window.location.pathname);
 
-      // Note: State validation is performed server-side (ar-bridge)
-      // ar-bridge validates state when generating handoff token
-      // Client-side state validation is optional and skipped here
-
       try {
         var config = window.AUTHRIM_CONFIG;
 
-        // ハンドオフトークンを検証
-        var response = await fetch(config.issuer + '/auth/external/handoff/verify', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            handoff_token: handoffToken,
-            state: state,
-            client_id: config.clientId,
-          }),
+        // enableOAuth: OAuth機能を有効化（Silent Login SSO対応のため必要）
+        var auth = await AuthrimWeb.createAuthrim({
+          issuer: config.issuer,
+          clientId: config.clientId,
+          enableOAuth: true, // OAuth機能を有効化（Silent Login SSO対応）
         });
 
-        if (!response.ok) {
-          var errorData = await response.json().catch(function() { return {}; });
-          console.error('[Authrim] Handoff verification failed:', errorData);
-          showError(errorData.error_description || 'Handoff verification failed');
-          return true;
-        }
+        // ✅ SDK統合メソッドを使用（約60行削減）
+        // ワンライナーでハンドオフ処理完了
+        // SDK内部で以下を自動実行:
+        // 1. ハンドオフトークン検証
+        // 2. State CSRF検証（handoff namespace）
+        // 3. localStorage への保存（SessionAuthImpl と同じ方法）
+        // 4. sessionStorage クリーンアップ
+        // 5. auth:login イベント発火
+        var result = await auth.handoff.verifyAndSave(handoffToken, state);
 
-        var tokenData = await response.json();
-        console.log('[Authrim] Token data received:', {
-          hasAccessToken: !!tokenData.access_token,
-          hasSession: !!tokenData.session,
-          hasUser: !!tokenData.user,
-          tokenData: tokenData
-        });
-
-        // Store access_token using SDK-compatible storage key
-        var storageKey = getStorageKey(config.issuer, config.clientId);
-        console.log('[Authrim] Storage key:', storageKey);
-        console.log('[Authrim] Saving access_token:', tokenData.access_token);
-
-        localStorage.setItem(storageKey, tokenData.access_token);
-
-        // Verify storage
-        var savedToken = localStorage.getItem(storageKey);
-        console.log('[Authrim] Saved token verification:', savedToken === tokenData.access_token ? 'OK' : 'FAILED');
-
-        // sessionStorageをクリーンアップ
-        sessionStorage.removeItem('authrim:authrim:direct:social:state');
-        sessionStorage.removeItem('authrim:authrim:direct:social:code_verifier');
-        sessionStorage.removeItem('authrim:authrim:direct:social:provider');
-        sessionStorage.removeItem('authrim:authrim:direct:social:redirect_uri');
+        // 高度な用途: Storage key を取得
+        // var storageKey = auth.session.getStorageKey();
+        // console.log('[Authrim] Storage key:', storageKey);
 
         console.log('[Authrim] Handoff login successful');
 
         // Success表示
         showState('success');
 
-        // リダイレクト先を取得
-        var redirectUri = sessionStorage.getItem('authrim:authrim:direct:social:redirect_uri') || 'index.html';
-        sessionStorage.removeItem('authrim:authrim:direct:social:redirect_uri');
-
         // リダイレクト
         setTimeout(function() {
-          window.location.href = redirectUri;
+          window.location.href = 'index.html';
         }, 1000);
 
         return true;
 
       } catch (error) {
         console.error('[Authrim] Handoff error:', error);
-        showError('An error occurred during handoff authentication');
+
+        // SDKの統一エラー型を活用
+        if (error.code === 'HANDOFF_STATE_MISMATCH') {
+          showError('CSRF attack detected. Please try again.');
+        } else {
+          showError('An error occurred during handoff authentication');
+        }
+
         return true;
       }
     }
