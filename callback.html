@@ -104,11 +104,99 @@
       return false;
     }
 
+    // Handoff Token処理（Smart Handoff SSO）
+    async function handleHandoffCallback() {
+      var params = new URLSearchParams(window.location.search);
+      var handoffToken = params.get('handoff_token');
+      var state = params.get('state');
+
+      if (!handoffToken) {
+        return false; // ハンドオフフローではない
+      }
+
+      console.log('[Authrim] Handoff callback detected');
+
+      // URLからトークンを即座に消去（Referrer漏洩対策）
+      history.replaceState(null, '', window.location.pathname);
+
+      // stateを検証
+      var storedState = sessionStorage.getItem('authrim:authrim:direct:social:state');
+      if (!storedState || storedState !== state) {
+        console.error('[Authrim] State mismatch');
+        showError('State verification failed');
+        return true;
+      }
+
+      try {
+        var config = window.AUTHRIM_CONFIG;
+
+        // ハンドオフトークンを検証
+        var response = await fetch(config.issuer + '/api/v1/auth/handoff/verify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            handoff_token: handoffToken,
+            state: state,
+            client_id: config.clientId,
+          }),
+        });
+
+        if (!response.ok) {
+          var errorData = await response.json().catch(function() { return {}; });
+          console.error('[Authrim] Handoff verification failed:', errorData);
+          showError(errorData.error_description || 'Handoff verification failed');
+          return true;
+        }
+
+        var tokenData = await response.json();
+
+        // セッション情報をlocalStorageに保存
+        // SDKのストレージキー形式に合わせる
+        var storageKey = 'authrim_session_' + btoa(config.issuer + config.clientId).replace(/=/g, '');
+        localStorage.setItem(storageKey, tokenData.access_token);
+
+        // sessionStorageをクリーンアップ
+        sessionStorage.removeItem('authrim:authrim:direct:social:state');
+        sessionStorage.removeItem('authrim:authrim:direct:social:code_verifier');
+        sessionStorage.removeItem('authrim:authrim:direct:social:provider');
+        sessionStorage.removeItem('authrim:authrim:direct:social:redirect_uri');
+
+        console.log('[Authrim] Handoff login successful');
+
+        // Success表示
+        showState('success');
+
+        // リダイレクト先を取得
+        var redirectUri = sessionStorage.getItem('authrim:authrim:direct:social:redirect_uri') || 'index.html';
+        sessionStorage.removeItem('authrim:authrim:direct:social:redirect_uri');
+
+        // リダイレクト
+        setTimeout(function() {
+          window.location.href = redirectUri;
+        }, 1000);
+
+        return true;
+
+      } catch (error) {
+        console.error('[Authrim] Handoff error:', error);
+        showError('An error occurred during handoff authentication');
+        return true;
+      }
+    }
+
     // Main
     async function main() {
       try {
         if (handlePopupCallbacks()) {
           return;
+        }
+
+        // ハンドオフコールバック処理を優先（Smart Handoff SSO）
+        var handoffHandled = await handleHandoffCallback();
+        if (handoffHandled) {
+          return; // ハンドオフ処理完了
         }
 
         // Check configuration
