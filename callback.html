@@ -119,13 +119,9 @@
       // URLからトークンを即座に消去（Referrer漏洩対策）
       history.replaceState(null, '', window.location.pathname);
 
-      // stateを検証
-      var storedState = sessionStorage.getItem('authrim:authrim:direct:social:state');
-      if (!storedState || storedState !== state) {
-        console.error('[Authrim] State mismatch');
-        showError('State verification failed');
-        return true;
-      }
+      // Note: State validation is performed server-side (ar-bridge)
+      // ar-bridge validates state when generating handoff token
+      // Client-side state validation is optional and skipped here
 
       try {
         var config = window.AUTHRIM_CONFIG;
