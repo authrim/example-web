@@ -154,17 +154,24 @@
           tokenData: tokenData
         });
 
-        // セッション情報をlocalStorageに保存
-        // SDKのストレージキー形式に合わせる
-        var storageKey = 'authrim_session_' + btoa(config.issuer + config.clientId).replace(/=/g, '');
-        console.log('[Authrim] Storage key:', storageKey);
-        console.log('[Authrim] Saving access_token:', tokenData.access_token);
+        // Initialize SDK to save session properly
+        console.log('[Authrim] Initializing SDK...');
+        var auth = await AuthrimWeb.createAuthrim({
+          issuer: config.issuer,
+          clientId: config.clientId,
+          enableOAuth: true,
+        });
 
-        localStorage.setItem(storageKey, tokenData.access_token);
-
-        // 保存確認
-        var savedToken = localStorage.getItem(storageKey);
-        console.log('[Authrim] Saved token verification:', savedToken === tokenData.access_token ? 'OK' : 'FAILED');
+        // Use SDK's login method to save session (matches ar-login-ui pattern)
+        if (tokenData.session && tokenData.user) {
+          console.log('[Authrim] Saving session via SDK...');
+          await auth.login(tokenData.session.id, {
+            userId: tokenData.user.id,
+            email: tokenData.user.email,
+            name: tokenData.user.name,
+          });
+          console.log('[Authrim] Session saved via SDK');
+        }
 
         // sessionStorageをクリーンアップ
         sessionStorage.removeItem('authrim:authrim:direct:social:state');
