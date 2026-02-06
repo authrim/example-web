@@ -27,8 +27,8 @@
         This sample demonstrates authentication features using the Authrim SDK.
       </p>
       <a href="login.html" class="btn btn-primary">Sign In</a>
-      <button id="oauth-signin-btn" class="btn btn-secondary" style="margin-top: 0.5rem;">
-        <span class="btn-text">Sign in with OAuth</span>
+      <button id="sso-login-btn" class="btn btn-primary" style="margin-top: 0.5rem;">
+        <span class="btn-text">SSO Login</span>
         <span class="btn-spinner hidden"><span class="spinner"></span></span>
       </button>
     </div>
@@ -133,7 +133,7 @@
     const $sessionId = document.getElementById('session-id');
     const $sessionExpires = document.getElementById('session-expires');
     const $logoutBtn = document.getElementById('logout-btn');
-    const $oauthSigninBtn = document.getElementById('oauth-signin-btn');
+    const $ssoLoginBtn = document.getElementById('sso-login-btn');
 
     // Switch state
     function showState(state) {
@@ -310,26 +310,38 @@
           showState('logged-out');
         }
 
-        // OAuth sign-in button
-        $oauthSigninBtn.addEventListener('click', async () => {
-          setButtonLoading($oauthSigninBtn, true);
+        // SSO Login button
+        $ssoLoginBtn.addEventListener('click', async () => {
+          setButtonLoading($ssoLoginBtn, true);
 
           try {
-            sessionStorage.setItem('oauth_flow', '1');
-            const result = await auth.oauth.popup.login({
-              redirectUri: window.location.origin + '/callback.html',
-              fallbackToRedirect: true,
-              fallbackRedirectUri: window.location.origin + '/callback.html',
-              scopes: getScopes(),
+            // Try Silent Login SSO with login fallback
+            // - If IdP has session → SSO success → redirect to callback → return to index
+            // - If IdP has no session → show login screen → login → redirect to callback → return to index
+            await auth.oauth.trySilentLogin({
+              onLoginRequired: 'login',  // Show login screen if no IdP session
+              returnTo: window.location.href,
             });
-            console.log('OAuth login result:', result);
-            alert('OAuth login completed. See console for tokens.');
-          } catch (e) {
-            console.error('OAuth login error:', e);
-            showError('OAuth login failed: ' + e.message);
+
+            // Never reached (redirect happens immediately)
+
+          } catch (error) {
+            console.error('SSO login error:', error);
+
+            // Error handling based on error type
+            let errorMessage = 'SSO login failed.';
+
+            if (error.code === 'OAUTH_POPUP_BLOCKED') {
+              errorMessage = 'Popup was blocked. Please check your browser settings.';
+            } else if (error.code === 'OAUTH_TIMEOUT') {
+              errorMessage = 'Login timed out. Please try again.';
+            } else if (error.message) {
+              errorMessage = 'SSO login failed: ' + error.message;
+            }
+
+            showError(errorMessage);
           } finally {
-            sessionStorage.removeItem('oauth_flow');
-            setButtonLoading($oauthSigninBtn, false);
+            setButtonLoading($ssoLoginBtn, false);
           }
         });
 
