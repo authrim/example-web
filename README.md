@@ -7,6 +7,7 @@ A Vanilla JavaScript sample application using the `@authrim/web` SDK. Loads the 
 - **Passkey Authentication**: Login and signup with biometrics or security keys
 - **Email Code Authentication**: Login with one-time code sent to email
 - **Social Login**: Login with Google, GitHub, or Apple
+- **Token Session Profile**: Browser token profile with DPoP support via `@authrim/web`
 - **Session Management**: Check login status, view profile, logout
 
 ## Quick Start
@@ -25,6 +26,7 @@ Then edit `config.js`:
 window.AUTHRIM_CONFIG = {
   issuer: 'https://your-tenant.authrim.com',
   clientId: 'your-client-id',
+  profile: 'token',
   // scopes: 'openid profile email',
 };
 ```
@@ -42,15 +44,15 @@ npx serve .
 
 Navigate to `http://localhost:3000` (or your Live Server URL).
 
-## Deploy to Cloudflare Pages
+## Deploy to Cloudflare Workers Static Assets
 
 ### Method 1: Git Integration
 
 1. Fork this repository to your GitHub account
 2. Edit `config.js` with your issuer and clientId
 3. Commit and push changes
-4. Log in to [Cloudflare Pages](https://pages.cloudflare.com/)
-5. Click "Create a project" → "Connect to Git"
+4. Log in to the Cloudflare dashboard
+5. Create a Workers static assets project from your repository
 6. Select your forked repository
 7. Build settings:
    - **Framework preset**: None
@@ -58,15 +60,15 @@ Navigate to `http://localhost:3000` (or your Live Server URL).
    - **Build output directory**: `/` or `.`
 8. Click "Save and Deploy"
 
-### Method 2: Direct Upload
+### Method 2: Wrangler Deploy
 
 1. Download this repository
 2. Edit `config.js`
-3. Log in to [Cloudflare Pages](https://pages.cloudflare.com/)
-4. Click "Create a project" → "Direct Upload"
-5. Enter a project name
-6. Drag and drop the entire folder
-7. Click "Deploy site"
+3. Deploy with Wrangler:
+
+```bash
+npx wrangler deploy
+```
 
 ## File Structure
 
@@ -116,9 +118,9 @@ In your Authrim Admin panel, configure the following:
 
 - **Client ID**: Set in `config.js` as `clientId`
 - **Allowed Redirect URIs**: Add your deployment URL
-  - e.g., `https://your-app.pages.dev/callback.html`
+  - e.g., `https://your-app.example.workers.dev/callback.html`
 - **Allowed Origins**: Add your deployment origin
-  - e.g., `https://your-app.pages.dev`
+  - e.g., `https://your-app.example.workers.dev`
 
 ## Technical Specifications
 
