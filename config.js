@@ -9,4 +9,7 @@ window.AUTHRIM_CONFIG = {
   // Client ID (get from Authrim dashboard)
   // e.g., 'abc123xyz456'
   clientId: 'your-client-id',
+
+  // Browser SDK profile. Vanilla browser examples use token + DPoP explicitly.
+  profile: 'token',
 };

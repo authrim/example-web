@@ -188,6 +188,7 @@
         auth = await AuthrimWeb.createAuthrim({
           issuer: window.AUTHRIM_CONFIG.issuer,
           clientId: window.AUTHRIM_CONFIG.clientId,
+          profile: window.AUTHRIM_CONFIG.profile || 'token',
         });
 
         // Initialize diagnostic logger if enabled
