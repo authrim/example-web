@@ -16,6 +16,22 @@
     <!-- Status Message -->
     <div id="status" class="status hidden"></div>
 
+    <!-- Tenant Discovery -->
+    <div id="tenant-discovery-card" class="card hidden">
+      <h2>Find your tenant</h2>
+      <p style="color: var(--gray-500); font-size: 0.875rem; margin-bottom: 1rem;">
+        Enter your email address to continue on your tenant login page.
+      </p>
+      <div class="form-group">
+        <label for="tenant-discovery-input">Email Address</label>
+        <input type="email" id="tenant-discovery-input" placeholder="you@example.com">
+      </div>
+      <button id="tenant-discovery-btn" class="btn btn-primary">
+        <span class="btn-text">Continue</span>
+        <span class="btn-spinner hidden"><span class="spinner"></span></span>
+      </button>
+    </div>
+
     <!-- Passkey Login -->
     <div class="card">
       <h2>Passkey</h2>
@@ -105,6 +121,9 @@
   <script>
     // Elements
     const $status = document.getElementById('status');
+    const $tenantDiscoveryCard = document.getElementById('tenant-discovery-card');
+    const $tenantDiscoveryInput = document.getElementById('tenant-discovery-input');
+    const $tenantDiscoveryBtn = document.getElementById('tenant-discovery-btn');
     const $passkeyLoginBtn = document.getElementById('passkey-login-btn');
     const $passkeySignupBtn = document.getElementById('passkey-signup-btn');
     const $emailStep = document.getElementById('email-step');
@@ -172,6 +191,53 @@
       }
     }
 
+    async function discoverTenantByEmail() {
+      var email = $tenantDiscoveryInput.value.trim();
+      if (!email) {
+        showStatus('Please enter your email address', 'error');
+        return;
+      }
+
+      setButtonLoading($tenantDiscoveryBtn, true);
+      hideStatus();
+      try {
+        var client = new AuthrimWeb.TenantDiscoveryClient({
+          baseUrl: window.AUTHRIM_CONFIG.tenantDiscovery?.commonEntryUrl || window.AUTHRIM_CONFIG.issuer,
+          http: {
+            fetch: async function(url, options) {
+              var response = await fetch(url, {
+                method: options?.method || 'GET',
+                headers: options?.headers,
+                body: options?.body,
+              });
+              var data = await response.json().catch(function() { return null; });
+              return {
+                ok: response.ok,
+                status: response.status,
+                statusText: response.statusText,
+                headers: {},
+                data: data,
+              };
+            },
+          },
+        });
+        var result = await client.discover({ email: email });
+        if (result.status === 'resolved') {
+          window.location.href = result.tenant.loginUrl;
+          return;
+        }
+        if (result.status === 'multiple') {
+          showStatus('Multiple tenants matched. Configure tenant code or app_hint for this example.', 'info');
+          return;
+        }
+        showStatus('Tenant could not be resolved. Use your tenant-specific login page.', 'error');
+      } catch (e) {
+        showStatus('Tenant discovery failed: ' + e.message, 'error');
+      } finally {
+        setButtonLoading($tenantDiscoveryBtn, false);
+      }
+    }
+
     // Main
     async function main() {
       // Check configuration
@@ -181,6 +247,11 @@
       }
 
       try {
+        if (window.AUTHRIM_CONFIG.tenantDiscovery?.enabled) {
+          $tenantDiscoveryCard.classList.remove('hidden');
+          $tenantDiscoveryBtn.addEventListener('click', discoverTenantByEmail);
+        }
+
         // Fetch available login methods
         var loginMethods = await fetchLoginMethods();
 

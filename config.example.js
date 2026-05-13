@@ -13,6 +13,12 @@ window.AUTHRIM_CONFIG = {
   // Browser SDK profile. Vanilla browser examples use token + DPoP explicitly.
   profile: 'token',
 
+  // Optional tenant discovery. Point issuer at the common-entry host when enabled.
+  tenantDiscovery: {
+    enabled: false,
+    // commonEntryUrl: 'https://auth.example.com',
+  },
+
   // Diagnostic logger options (optional)
   diagnostic: {
     enabled: false,              // Enable diagnostic logging
