@@ -175,18 +175,18 @@
       }, 1000);
     }
 
-    // Fetch available login methods from the server
-    async function fetchLoginMethods() {
+    // Fetch available authentication methods from the server
+    async function fetchAuthenticationMethods() {
       try {
-        var response = await fetch(window.AUTHRIM_CONFIG.issuer + '/api/auth/login-methods');
+        var response = await fetch(window.AUTHRIM_CONFIG.issuer + '/api/auth/authentication-methods');
         if (!response.ok) {
-          console.error('Failed to fetch login methods:', response.status);
+          console.error('Failed to fetch authentication methods:', response.status);
           return null;
         }
         var data = await response.json();
         return data;
       } catch (e) {
-        console.error('Error fetching login methods:', e);
+        console.error('Error fetching authentication methods:', e);
         return null;
       }
     }
@@ -252,8 +252,8 @@
           $tenantDiscoveryBtn.addEventListener('click', discoverTenantByEmail);
         }
 
-        // Fetch available login methods
-        var loginMethods = await fetchLoginMethods();
+        // Fetch available authentication methods
+        var authenticationMethods = await fetchAuthenticationMethods();
 
         // Initialize SDK
         auth = await AuthrimWeb.createAuthrim({
@@ -292,8 +292,8 @@
         }
 
         // Configure UI based on available methods
-        if (loginMethods) {
-          configureLoginUI(loginMethods);
+        if (authenticationMethods) {
+          configureLoginUI(authenticationMethods);
         }
 
         // Check Passkey support
@@ -312,7 +312,7 @@
       }
     }
 
-    // Configure UI based on available login methods
+    // Configure UI based on available authentication methods
     function configureLoginUI(data) {
       var methods = data.methods;
 
